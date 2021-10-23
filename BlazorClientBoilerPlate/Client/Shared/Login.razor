@@ -1,0 +1,69 @@
+﻿@inject NavigationManager NavigationManager
+@inject IAlertService AlertService
+@inject WebApiAuthentication WebApiAuthentication
+
+<main>
+    <div class="card" style="align-self:center;align-content:center;vertical-align:center;width:20vw">
+        <h4 class="card-header">Login</h4>
+        <div class="card-body">
+            <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                <div class="form-group">
+                    <label>Username</label>
+                    <InputText @bind-Value="model.Username" class="form-control" />
+                    <ValidationMessage For="@(() => model.Username)" />
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <InputText @bind-Value="model.Password" type="password" class="form-control" />
+                    <ValidationMessage For="@(() => model.Password)" />
+                </div>
+                <button disabled="@loading" class="btn btn-primary">
+                    @if (loading) 
+                    {
+                        <span class="spinner-border spinner-border-sm mr-1"></span>
+                    }
+                    Login
+                </button>
+                <NavLink href="account/register" class="btn btn-link">Register</NavLink>
+            </EditForm>
+        </div>
+        <div>       
+            <button class="btn btn-primary" onclick="@Credentials">
+                    Fill In Test Credentials
+            </button>
+        </div>
+    </div>
+</main>
+   
+@code{
+    private BlazorClientBoilerPlate.Shared.DataModels.Login model = new BlazorClientBoilerPlate.Shared.DataModels.Login();
+    private bool loading;
+
+    private async void OnValidSubmit()
+    {
+        // reset alerts on submit
+        AlertService.Clear();
+
+        loading = true;
+        try
+        {
+            await WebApiAuthentication.AuthenticateAsync(model);
+            var returnUrl = NavigationManager.QueryString("returnUrl") ?? "";
+            NavigationManager.NavigateTo(returnUrl);
+        }
+        catch (Exception ex)
+        {
+            AlertService.Error(ex.Message);
+            loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async void Credentials()
+    {
+        model.Username = "admin@root.com";
+        model.Password = "123Pa$$word!";
+        StateHasChanged();
+    }
+}
