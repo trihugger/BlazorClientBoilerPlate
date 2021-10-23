@@ -8,7 +8,7 @@
     }
   },
   "profiles": {
-    "BlazorClient6test1": {
+    "BlazorClientBoilerPlate": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,
