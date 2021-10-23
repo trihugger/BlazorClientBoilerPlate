@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Shared\BlazorClient6test1.Shared.csproj" />
+    <ProjectReference Include="..\Shared\BlazorClientBoilerPlate.Shared.csproj" />
   </ItemGroup>
 
 </Project>
