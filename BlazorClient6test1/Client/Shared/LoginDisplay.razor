@@ -1,0 +1,20 @@
+﻿@inject NavigationManager Navigation
+@inject WebApiAuthentication WebApiAuthentication
+<!-- inject SignOutSessionStateManager SignOutManager -->
+
+<AuthorizeView>
+    <Authorized>
+        Hello, @WebApiAuthentication.User.FirstName
+        <button class="nav-link btn btn-link" @onclick="BeginLogout">Log out</button>
+    </Authorized>
+    <NotAuthorized>
+        <a href="login">Log in</a>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code{
+    private async Task BeginLogout(MouseEventArgs args)
+    {
+        await WebApiAuthentication.LogoutAsync();
+    }
+}

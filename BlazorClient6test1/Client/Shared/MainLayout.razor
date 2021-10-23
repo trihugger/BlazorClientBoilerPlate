@@ -1,0 +1,28 @@
+﻿@inherits LayoutComponentBase
+@inject WebApiAuthentication WebApiAuthentication
+@inject NavigationManager NavigationManager
+
+<div class="page">
+
+    @if (WebApiAuthentication.IsAuthenticated)
+    {
+        <div class="sidebar">
+            <NavMenu />
+        </div>
+
+        <main>
+            <div class="top-row px-4 auth">
+                <LoginDisplay />
+                <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
+            </div>
+
+            <article class="content px-4">
+                @Body
+            </article>
+        </main>
+    }else{
+        <main>
+            <Login />
+        </main>        
+    }    
+</div>

@@ -1,0 +1,50 @@
+﻿@page "/brands"
+@inject WebApiAuthentication WebApiAuthentication;
+@inject IBrandService brandService
+
+<h3>Brands</h3>
+
+@if (brands == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Brand</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var brand in brands)
+            {
+                <tr>
+                    <td>@brand.Name</td>
+                    <td>@brand.Description</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    bool authenticate = false;
+    GetAllResults<BrandDTO> brandResults = new GetAllResults<BrandDTO>();
+    List<BrandDTO> brands = new List<BrandDTO>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        BrandFilter filter = new BrandFilter();
+        List<string> searchFields = new List<string>();
+        string keyword = "";
+
+        brandResults = await brandService.GetAll(filter);
+        if (brandResults.Succeeded)
+        {
+            brands = brandResults.Data;    
+        }
+        StateHasChanged();
+    }
+}
