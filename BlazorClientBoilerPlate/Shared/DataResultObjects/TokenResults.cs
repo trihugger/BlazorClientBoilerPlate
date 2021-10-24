@@ -9,11 +9,9 @@ namespace BlazorClientBoilerPlate.Shared.DataResultObjects
 {
     public class TokenResults
     {
-        [JsonPropertyName("token")]
         public string Token { get; set; }
-        [JsonPropertyName("refreshToken")]
         public string Refreshtoken { get; set; }
-        [JsonPropertyName("refreshTokenExpiryTime")]
+        [JsonPropertyName("RefreshTokenExpiryTime")]
         public DateTime Expiration { get; set; }
     }
 }

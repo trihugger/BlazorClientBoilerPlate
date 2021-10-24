@@ -8,7 +8,7 @@ namespace BlazorClientBoilerPlate.Shared.DataModels
 {
     public class User
     {
-        public Guid Id { get; set; }
+        public string Id { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string Username { get; set; }
@@ -28,7 +28,7 @@ namespace BlazorClientBoilerPlate.Shared.DataModels
             TokenExpireDate = expireDate;
         }
 
-        public User(Guid id, string firstName, string lastName, string username, string token, string refreshtoken, DateTime expireDate)
+        public User(string id, string firstName, string lastName, string username, string token, string refreshtoken, DateTime expireDate)
         {
             Id = id;
             FirstName = firstName;

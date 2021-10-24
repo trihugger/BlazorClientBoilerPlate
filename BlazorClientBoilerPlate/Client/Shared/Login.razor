@@ -1,6 +1,7 @@
 ﻿@inject NavigationManager NavigationManager
 @inject IAlertService AlertService
 @inject WebApiAuthentication WebApiAuthentication
+@inject ILogger<Login> logger
 
 <main>
     <div class="card" style="align-self:center;align-content:center;vertical-align:center;width:20vw">
@@ -48,7 +49,8 @@
         loading = true;
         try
         {
-            await WebApiAuthentication.AuthenticateAsync(model);
+            bool loggedIn = await WebApiAuthentication.AuthenticateAsync(model);
+            logger.LogInformation("Login was succesfull: " + loggedIn.ToString());
             var returnUrl = NavigationManager.QueryString("returnUrl") ?? "";
             NavigationManager.NavigateTo(returnUrl);
         }

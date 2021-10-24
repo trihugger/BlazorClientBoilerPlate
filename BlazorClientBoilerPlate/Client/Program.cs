@@ -5,18 +5,22 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using BlazorClientBoilerPlate.CoreApi;
 using System.Net;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
+builder.Logging.SetMinimumLevel(LogLevel.Debug); // Add Logging
+builder.Logging.AddProvider(new CustomLoggerProvider());
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
-builder.Logging.SetMinimumLevel(LogLevel.Debug); // Add Logging
+
+// var config = builder.Services.BuildServiceProvider().GetRequiredService<IConfiguration>();
 
 builder.Services.AddWebApi(); // WebApiClient Implementation Service Collection
 
-builder.Services.AddAuthorizationCore(); // Add Authorization Core
-
 builder.Services.AddScoped<IAlertService, AlertService>(); // Add supporting services for client UI functionality
+
+builder.Services.AddAuthorizationCore(); // Add Authorization Core
 
 //TODO: consider 3rd party authentication
 //builder.Services.AddMsalAuthentication(options =>

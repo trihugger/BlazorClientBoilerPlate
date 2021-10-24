@@ -9,9 +9,8 @@ namespace BlazorClientBoilerPlate.Shared.DataTransferObjects
 {
     public class TokenDTO
     {
-        [JsonPropertyName("email")]
+        [JsonPropertyName("Email")]
         public string Username { get; private set; }
-        [JsonPropertyName("password")]
         public string Password { get; private set; }
 
         public TokenDTO(string username, string password)

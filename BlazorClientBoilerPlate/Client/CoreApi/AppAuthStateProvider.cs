@@ -17,7 +17,7 @@ namespace BlazorClientBoilerPlate.Client.API
             return await Task.FromResult(new AuthenticationState(claimsPrincipal));
         }
 
-        public void LoginNotify()
+        public void LoginNotify(ClaimsPrincipal principal)
         {
             var identity = new ClaimsIdentity(new[]
             {
@@ -26,6 +26,9 @@ namespace BlazorClientBoilerPlate.Client.API
             }, "Fake Authentication");
 
             claimsPrincipal = new ClaimsPrincipal(identity);
+            
+            if(principal != null)
+                claimsPrincipal = principal;
             NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
         }
 

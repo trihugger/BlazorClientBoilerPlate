@@ -19,10 +19,10 @@ namespace BlazorClientBoilerPlate.Client.API.BaseApi
     {
         private readonly HttpClient _httpClient;
         private readonly WebApiAuthentication _webApiAuthentication;
-        private readonly ILogger _logger;
+        private readonly ILogger<WebApiClient> _logger;
         private JsonSerializerOptions _serializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
 
-        public WebApiClient(HttpClient httpClient, WebApiAuthentication webApiAuthentication, ILogger logger)
+        public WebApiClient(HttpClient httpClient, WebApiAuthentication webApiAuthentication, ILogger<WebApiClient> logger)
         {
             _logger = logger;
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
