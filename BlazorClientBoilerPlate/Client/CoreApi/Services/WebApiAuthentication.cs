@@ -13,6 +13,7 @@ namespace BlazorClientBoilerPlate.Client.API.Services
         private readonly WebApiClientFactory _webApiClientFactory;
         private readonly NavigationManager _navigationManager;
         private readonly AuthenticationStateProvider _authenticationStateProvider;
+        private WebApiClient _webApiClient;
 
         public User User { get; set; } = null;
 
@@ -38,15 +39,15 @@ namespace BlazorClientBoilerPlate.Client.API.Services
 
         public async Task<bool> AuthenticateAsync(Login login, CancellationToken cancellationToken = default)
         {
-            var webApiClient = _webApiClientFactory.Create();
+            _webApiClient = _webApiClient ?? _webApiClientFactory.Create();
             TokenDTO tokenDTO = new TokenDTO(login.Username, login.Password);
-            var response = await webApiClient.ExecuteAsync<GetAllResult<TokenResults>, TokenDTO>(HttpMethod.Post, WebApiEndpoints.TokenEndpoint, cancellationToken, tokenDTO).ConfigureAwait(false);
+            var response = await _webApiClient.ExecuteAsync<GetAllResult<TokenResults>, TokenDTO>(HttpMethod.Post, WebApiEndpoints.TokenEndpoint, cancellationToken, tokenDTO).ConfigureAwait(false);
             if(response != null)
             {
-                var responseCurrentUser = await webApiClient.ExecuteAsync<string>(HttpMethod.Get, WebApiEndpoints.UsersCurrentEndpoint, cancellationToken, response.Data.Token).ConfigureAwait(false);
+                var responseCurrentUser = await _webApiClient.ExecuteAsync<string>(HttpMethod.Get, WebApiEndpoints.UsersCurrentEndpoint, cancellationToken, response.Data.Token).ConfigureAwait(false);
                 if(!string.IsNullOrEmpty(responseCurrentUser))
                 {
-                    var responseUser = await webApiClient.ExecuteAsync<GetAllResults<UserResult>>(HttpMethod.Get, WebApiEndpoints.UsersEndpoint.AddParameters(new KeyValuePair<string, string>[]{ new KeyValuePair<string, string>("", responseCurrentUser)}), cancellationToken, response.Data.Token).ConfigureAwait(false);
+                    var responseUser = await _webApiClient.ExecuteAsync<GetAllResults<UserResult>>(HttpMethod.Get, WebApiEndpoints.UsersEndpoint.AddParameters(new KeyValuePair<string, string>[]{ new KeyValuePair<string, string>("", responseCurrentUser)}), cancellationToken, response.Data.Token).ConfigureAwait(false);
                     if(responseUser.Data[0].Id != Guid.Empty)
                     {
                         User = new User(responseUser.Data[0].Id, responseUser.Data[0].FirstName, responseUser.Data[0].LastName, responseUser.Data[0].Email, response.Data.Token, response.Data.Refreshtoken, response.Data.Expiration);
@@ -67,6 +68,22 @@ namespace BlazorClientBoilerPlate.Client.API.Services
             User = null;
             _navigationManager.NavigateTo("/login");
             (_authenticationStateProvider as AppAuthStateProvider).LogoutNotify();
+        }
+
+        public async Task<bool> RefreshToken(CancellationToken cancellationToken) 
+        {
+            _webApiClient = _webApiClient ?? _webApiClientFactory.Create();
+            RefreshTokenDTO refreshTokenDTO = new RefreshTokenDTO(User.RefreshToken); // TODO: Update RefreshTokenDTO and TokenEndpoint is correct
+            var response = await _webApiClient.ExecuteAsync<GetAllResult<TokenResults>, RefreshTokenDTO>(HttpMethod.Post, WebApiEndpoints.TokenEndpoint, cancellationToken, refreshTokenDTO).ConfigureAwait(false);
+            if(response != null)
+            {
+                var token = response.Data;
+                User.Token = token.Token;
+                User.RefreshToken = token.Refreshtoken;
+                User.TokenExpireDate = token.Expiration;
+                return true;
+            }
+            return false;
         }
     }
 }

@@ -31,7 +31,7 @@ namespace BlazorClientBoilerPlate.Client.API
                 client.DefaultRequestHeaders
                     .Accept
                     .Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            });
+            }).SetHandlerLifetime(TimeSpan.FromMinutes(5));
             services.AddSingleton<WebApiClientFactory>();
         }
     }
