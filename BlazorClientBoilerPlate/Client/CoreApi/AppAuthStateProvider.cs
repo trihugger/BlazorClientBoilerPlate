@@ -19,24 +19,27 @@ namespace BlazorClientBoilerPlate.Client.API
 
         public void LoginNotify(ClaimsPrincipal principal)
         {
-            var identity = new ClaimsIdentity(new[]
-            {
-                new Claim(ClaimTypes.Name, "Test"),
-                new Claim(ClaimTypes.Email, "test@test.com")
-            }, "Fake Authentication");
-
-            claimsPrincipal = new ClaimsPrincipal(identity);
-            
-            if(principal != null)
-                claimsPrincipal = principal;
+            claimsPrincipal = principal != null ? principal : GetAnonymous();
             NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
         }
 
         public void LogoutNotify()
         {
-            var anonymous = new ClaimsPrincipal(new ClaimsIdentity());
-            claimsPrincipal = new ClaimsPrincipal(anonymous);
+            claimsPrincipal = GetAnonymous();
             NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+        }
+
+        // TODO: create a has claim method
+
+        private ClaimsPrincipal GetAnonymous()
+        {
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Role, "Test")
+            };
+            var test = new ClaimsPrincipal(new ClaimsPrincipal(new ClaimsIdentity(claims)));
+
+            return new ClaimsPrincipal(new ClaimsPrincipal(new ClaimsIdentity()));
         }
     }
 }

@@ -1,7 +1,9 @@
 ﻿using BlazorClientBoilerPlate.Client.API.BaseApi;
 using BlazorClientBoilerPlate.Client.API.Services;
 using BlazorClientBoilerPlate.Client.API.Services.Catalog;
+using BlazorClientBoilerPlate.Client.CoreApi.Constants;
 using BlazorClientBoilerPlate.Shared.DataModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +16,14 @@ namespace BlazorClientBoilerPlate.Client.API
     {
         public static void AddWebApi(this IServiceCollection services)
         {
+            // Add Policies
+            services.AddAuthorizationCore(config =>
+            {
+                config.AddPolicy(Permissions.Authenticated, Permissions.AuthenticatedPolicy());
+                config.AddPolicy(Permissions.IsAdmin, Permissions.IsAdminPolicy());
+                config.AddPolicy(Permissions.AccessBrands, Permissions.AccessBrandsPolicy());
+            });
+
             // Add services for each project
             services.AddTransient<IBrandService, BrandService>();
 
@@ -33,9 +43,7 @@ namespace BlazorClientBoilerPlate.Client.API
                 client.DefaultRequestHeaders
                     .Accept
                     .Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            })
-                .SetHandlerLifetime(TimeSpan.FromMinutes(5));
-            // services.Configure<JwtSettings>(config.GetSection(nameof(JwtSettings)).AsEnumerable().Get);
+            }).SetHandlerLifetime(TimeSpan.FromMinutes(5));
             services.AddSingleton<WebApiClientFactory>();
         }
     }

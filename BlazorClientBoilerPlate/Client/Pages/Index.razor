@@ -16,12 +16,15 @@
             <h1>Please Login first</h1>
         </NotAuthorized>
     </AuthorizeView>
+    <p>@_authMessage</p>
 </div>
 
 @code{
     [CascadingParameter]
     private Task<AuthenticationState> authState { get; set; }
-    private IList<Claim> userClaim 
+    private string _authMessage;
+
+    private IList<Claim> userClaims 
     {
         get
         {
@@ -34,4 +37,8 @@
         } 
     }
 
+    protected override async Task OnInitializedAsync()
+    {
+        _authMessage = authState.Result.User.Identity.IsAuthenticated.ToString();
+    }
 }

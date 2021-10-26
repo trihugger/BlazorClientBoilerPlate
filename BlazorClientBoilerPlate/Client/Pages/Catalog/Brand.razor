@@ -27,6 +27,8 @@ else
             }
         </tbody>
     </table>
+
+    <button onclick="@CreateMassRecords">Create Mass</button>
 }
 
 @code {
@@ -46,5 +48,10 @@ else
             brands = brandResults.Data;    
         }
         StateHasChanged();
+    }
+
+    private async Task CreateMassRecords()
+    {
+        
     }
 }

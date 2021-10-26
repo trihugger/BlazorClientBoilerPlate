@@ -1,4 +1,7 @@
-﻿@inject WebApiAuthentication WebApiAuthentication
+﻿@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@inject WebApiAuthentication WebApiAuthentication
+@inject AuthenticationStateProvider AuthStateProvider
 
 <CascadingAuthenticationState>
     <Router AppAssembly="@typeof(App).Assembly">

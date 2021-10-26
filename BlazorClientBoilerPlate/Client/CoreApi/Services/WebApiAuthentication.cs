@@ -19,10 +19,10 @@ namespace BlazorClientBoilerPlate.Client.API.Services
         private readonly NavigationManager _navigationManager;
         private readonly AuthenticationStateProvider _authenticationStateProvider;
         private WebApiClient _webApiClient;
-        private readonly JwtSettings _jwtconfig;
+        private JwtSettings _jwtconfig = new JwtSettings();
         private readonly IConfiguration _configuration;
 
-        public User User { get; set; } = null;
+        public User? User { get; set; } = null;
 
         public bool IsAuthenticated
         {
@@ -38,84 +38,40 @@ namespace BlazorClientBoilerPlate.Client.API.Services
             _navigationManager = navigationManager;
             _authenticationStateProvider = authenticationStateProvider;
             _configuration = configuration;
-            //_jwtconfig.Key = configuration["JwtSettings:key"].ToString();
+            var jwtsettings = _configuration.GetSection("JwtSettings:key");
+            _jwtconfig.Key = jwtsettings.Value;
         }
 
-        public async Task Initialize()
+        public void Initialize()
         {
             // TODO: stuff to initialize see if we need local storage
         }
 
         public async Task<bool> AuthenticateAsync(Login login, CancellationToken cancellationToken = default)
         {
-            try
-            {
-                _webApiClient = _webApiClientFactory.Create();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
+            _webApiClient = _webApiClientFactory.Create();
             TokenDTO tokenDTO = new TokenDTO(login.Username, login.Password);
             var response = await _webApiClient.ExecuteAsync<GetAllResult<TokenResults>, TokenDTO>(HttpMethod.Post, WebApiEndpoints.TokenEndpoint, cancellationToken, tokenDTO).ConfigureAwait(false);
             if (response != null)
             {
-                var jwtsettings = _configuration.GetSection("JwtSettings:key");
-                var key = jwtsettings.Value;
-                var principal = GetPrincipalFromExpiredToken(response.Data.Token, key);
-                (_authenticationStateProvider as AppAuthStateProvider).LoginNotify(principal);
-
-                var userid = principal.Claims.Where(t => t.Type == ClaimTypes.NameIdentifier).FirstOrDefault().Value ?? string.Empty;
-                var firstname = principal.Claims.Where(t => t.Type == ClaimTypes.Name).FirstOrDefault().Value ?? string.Empty;
-                var lastname = principal.Claims.Where(t => t.Type == ClaimTypes.Surname).FirstOrDefault().Value ?? string.Empty;
-                var email = principal.Claims.Where(t => t.Type == ClaimTypes.Email).FirstOrDefault().Value;
-                User = new User(
-                    userid,
-                    firstname,
-                    lastname,
-                    email,
-                    response.Data.Token,
-                    response.Data.Refreshtoken,
-                    response.Data.Expiration
-                    );
-
+                var principal = GetPrincipalClaims(response.Data);
+                SetUserFromClaims(principal, response.Data);
+                ((AppAuthStateProvider)_authenticationStateProvider).LoginNotify(principal);
                 return true;
-                // var responseCurrentUser = await _webApiClient.ExecuteAsync<string>(HttpMethod.Get, WebApiEndpoints.UsersCurrentEndpoint, cancellationToken, response.Data.Token).ConfigureAwait(false);
-                // if (!string.IsNullOrEmpty(responseCurrentUser))
-                //{
-                //    var responseUser = await _webApiClient.ExecuteAsync<GetAllResults<UserResult>>(HttpMethod.Get, WebApiEndpoints.UsersEndpoint.AddParameters(new KeyValuePair<string, string>[] { new KeyValuePair<string, string>("", responseCurrentUser) }), cancellationToken, response.Data.Token).ConfigureAwait(false);
-                //    if (responseUser.Data[0].Id != Guid.Empty)
-                //    {
-                //        User = new User(responseUser.Data[0].Id, responseUser.Data[0].FirstName, responseUser.Data[0].LastName, responseUser.Data[0].Email, response.Data.Token, response.Data.Refreshtoken, response.Data.Expiration);
-                        
-                //        return true;
-                //    }
-                //    User = new User(response.Data.Token, response.Data.Refreshtoken, response.Data.Expiration);
-                //    return false;
-                //}
-                //User = new User(response.Data.Token, response.Data.Refreshtoken, response.Data.Expiration);
-                //return false;
             }
             return false;
         }
 
-        public async Task LogoutAsync()
+        public void Logout()
         {
-            User = null;
+            User = default;
+            ((AppAuthStateProvider)_authenticationStateProvider).LogoutNotify();
             _navigationManager.NavigateTo("/login");
-            (_authenticationStateProvider as AppAuthStateProvider).LogoutNotify();
         }
 
         public async Task<bool> RefreshToken(CancellationToken cancellationToken)
         {
-            try
-            {
-                _webApiClient = _webApiClientFactory.Create();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
+            _webApiClient = _webApiClientFactory.Create();
             RefreshTokenDTO refreshTokenDTO = new RefreshTokenDTO(User.RefreshToken); // TODO: Update RefreshTokenDTO and TokenEndpoint is correct
             var response = await _webApiClient.ExecuteAsync<GetAllResult<TokenResults>, RefreshTokenDTO>(HttpMethod.Post, WebApiEndpoints.TokenEndpoint, cancellationToken, refreshTokenDTO).ConfigureAwait(false);
             if (response != null)
@@ -129,38 +85,36 @@ namespace BlazorClientBoilerPlate.Client.API.Services
             return false;
         }
 
-        public ClaimsPrincipal GetPrincipalFromExpiredToken(string token, string key)
+        #region Process Token and Claims
+        private ClaimsPrincipal GetPrincipalClaims(TokenResults tokenResults)
         {
-            // new
             var claims = new List<Claim>();
-            var payload = token.Split(".")[1];
+            var payload = tokenResults.Token.Split(".")[1];
             var jsonBytes = ParseBase64WithoutPadding(payload);
             var keyValuePairs = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonBytes);
-            claims.AddRange(keyValuePairs.Select(kvp => new Claim(kvp.Key, kvp.Value.ToString())));
+            claims.AddRange(keyValuePairs!.Select(kvp => new Claim(kvp.Key, kvp.Value.ToString())));
+            claims.Add(new Claim("Token", tokenResults.Token));
+            claims.Add(new Claim("RefreshToken", tokenResults.Refreshtoken));
+            claims.Add(new Claim("TokenExpiration", tokenResults.Expiration.ToString("MM/dd/yyyy hh:mm:ss")));
+            // claims = GetRoles(claims);             // TODO: Get Roles
+            // TODO: Get RoleClaims
 
-            ClaimsPrincipal principal2 = new ClaimsPrincipal(new ClaimsIdentity(claims, "jwtAuthType"));
-            return principal2;
+            // TODO: For RoleClaims - setup constants similar to server
+            ClaimsPrincipal principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
+            return principal;
+        }
 
-            // old
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var tokenValidation = tokenValidationParameters(key);
-            try
+        private async Task<List<Claim>> GetRoles(List<Claim> claims, CancellationToken cancellationToken = default)
+        {
+            var response = await _webApiClient.ExecuteAsync<GetAllResult<UserRolesResults>>(HttpMethod.Get, WebApiEndpoints.UsersRolesEndpoint(User!.Id), cancellationToken, User.Token);
+            if(response != null)
             {
-                var principal = tokenHandler.ValidateToken(token, tokenValidation, out var securityToken);
-                if (securityToken is not JwtSecurityToken jwtSecurityToken ||
-                        !jwtSecurityToken.Header.Alg.Equals(
-                            SecurityAlgorithms.HmacSha256,
-                            StringComparison.InvariantCultureIgnoreCase))
+                foreach (var role in response.Data.UserRoles)
                 {
-                    throw new Exception("Token didn't verify");
+                    if(role.Enabled) claims.Add(new Claim(ClaimTypes.Role, role.RoleName.ToString()));
                 }
-                return principal;
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Test");
-            }
-            return default;
+            return claims;
         }
 
         private TokenValidationParameters tokenValidationParameters(string key)
@@ -187,5 +141,25 @@ namespace BlazorClientBoilerPlate.Client.API.Services
             }
             return Convert.FromBase64String(base64);
         }
+
+        private void SetUserFromClaims(ClaimsPrincipal principal, TokenResults token)
+        {
+            var userid = principal.Claims.FirstOrDefault(t => t.Type == ClaimTypes.NameIdentifier).Value ?? string.Empty;
+            var firstname = principal.Claims.FirstOrDefault(t => t.Type == ClaimTypes.Name).Value ?? string.Empty;
+            var lastname = principal.Claims.FirstOrDefault(t => t.Type == ClaimTypes.Surname).Value ?? string.Empty;
+            var email = principal.Claims.FirstOrDefault(t => t.Type == ClaimTypes.Email).Value ?? string.Empty;
+            User = new User(
+                userid,
+                firstname,
+                lastname,
+                email,
+                token.Token,
+                token.Refreshtoken,
+                token.Expiration
+                );
+        }
+
+
+        #endregion
     }
 }

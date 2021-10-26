@@ -2,7 +2,7 @@
 
 namespace BlazorClientBoilerPlate.Client.API.Constants
 {
-    public class WebApiEndpoints
+    public static class WebApiEndpoints
     {
         public const string BaseAppEndpoint = "https://localhost:5001/api";
         public const string HealthCheckEndpoint = BaseAppEndpoint + "/health";
@@ -11,11 +11,14 @@ namespace BlazorClientBoilerPlate.Client.API.Constants
         public const string IdentityRegisterEndpoint = IdentityEndpoint + "/register";
         public const string RolesEndpoint = BaseAppEndpoint + "/roles";
         public const string RolesAllEndpoint = RolesEndpoint + "/all";
-        public string RolesPermissionsEndpoint(Guid roleId) => RolesEndpoint + "/" + roleId + "/permissions";
+        public static string RolesPermissionsEndpoint(string roleId) => RolesEndpoint + "/" + roleId + "/permissions";
         public const string UsersEndpoint = BaseAppEndpoint + "/users";
+        public static string UsersGetByIdEndpoint(string userId) => UsersEndpoint + "/" + userId;
+        public static string UsersRolesEndpoint(string userId) => UsersEndpoint + "/" + userId + "/roles";
+        public static string UsersPermissionsEndpoint(string userId) => UsersEndpoint + "/" + userId + "/permissions";
         public const string UsersCurrentEndpoint = UsersEndpoint + "/id";
         public const string TenantEndpoint = BaseAppEndpoint + "/tenants";
-        public string TenantByKeyEndpoint(string tenantKey) => TenantEndpoint + "/" + tenantKey;
+        public static string TenantByKeyEndpoint(string tenantKey) => TenantEndpoint + "/" + tenantKey;
         public const string BrandsV1Endpoint = BaseAppEndpoint + "/v1/brands";
 
     }
